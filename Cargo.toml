@@ -8,7 +8,7 @@ edition = "2024"
 # client-http     = { path = "../client-http" }
 # mem-log         = { path = "../mem-log", features = [] }
 # network-v1-http = { path = "../network-v1-http" }
-openraft        = { path="../openraft/openraft", features = ["serde", "type-alias"] }
+openraft        = { git = "https://github.com/databendlabs/openraft", branch = "release-0.10", features = ["serde", "type-alias"] }
 
 actix-web          = { version = "4.0.0-rc.2" }
 bincode = "1"
@@ -21,6 +21,7 @@ tracing            = { version = "0.1.29" }
 tracing-subscriber = { version = "0.3.0", features = ["env-filter"] }
 maplit = "1.0.2"
 futures = "0.3.31"
+socket2 = "0.5"
 
 
 [dev-dependencies]
