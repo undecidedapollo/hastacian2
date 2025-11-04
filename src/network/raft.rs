@@ -1,24 +1,33 @@
+use actix_web::Responder;
 use actix_web::post;
 use actix_web::web::Data;
 use actix_web::web::Json;
-use actix_web::Responder;
 use openraft::raft::AppendEntriesRequest;
 use openraft::raft::InstallSnapshotRequest;
 use openraft::raft::VoteRequest;
 
-use crate::app::App;
 use crate::TypeConfig;
+use crate::app::App;
 
 // --- Raft communication
 
 #[post("/vote")]
-pub async fn vote(app: Data<App>, req: Json<VoteRequest<TypeConfig>>) -> actix_web::Result<impl Responder> {
-    let res = app.raft.vote(req.0).await;
+pub async fn vote(
+    app: Data<App>,
+    req: Json<VoteRequest<TypeConfig>>,
+) -> actix_web::Result<impl Responder> {
+    let res: Result<
+        openraft::raft::VoteResponse<TypeConfig>,
+        openraft::error::RaftError<TypeConfig>,
+    > = app.raft.vote(req.0).await;
     Ok(Json(res))
 }
 
 #[post("/append")]
-pub async fn append(app: Data<App>, req: Json<AppendEntriesRequest<TypeConfig>>) -> actix_web::Result<impl Responder> {
+pub async fn append(
+    app: Data<App>,
+    req: Json<AppendEntriesRequest<TypeConfig>>,
+) -> actix_web::Result<impl Responder> {
     let res = app.raft.append_entries(req.0).await;
     Ok(Json(res))
 }

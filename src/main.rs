@@ -10,6 +10,9 @@ pub struct Opt {
 
     #[clap(long)]
     pub http_addr: String,
+
+    #[clap(long)]
+    pub tcp_port: u16,
 }
 
 #[actix_web::main]
@@ -29,5 +32,5 @@ async fn main() -> std::io::Result<()> {
 
     tracing::info!("Starting node {} on {}", options.id, options.http_addr);
 
-    start_example_raft_node(options.id, options.http_addr).await
+    start_example_raft_node(options.id, options.http_addr, options.tcp_port).await
 }
