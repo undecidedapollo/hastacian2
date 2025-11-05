@@ -1,4 +1,4 @@
-use crate::AutoAbort;
+use crate::util::AutoAbort;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 use tokio::time::{Duration, sleep};
 
 #[derive(Parser, Debug)]
-#[command(name = "hastacian")]
+#[command(name = "distacian")]
 #[command(about = "Bidirectional TCP server with ping/pong")]
 struct Args {
     #[arg(short, long)]
@@ -296,7 +296,7 @@ where
                 return Err(e);
             }
         } else {
-            return Err("No active connection".into());
+            return Err(format!("No active connection {}", self.peer_port).into());
         }
         Ok(req_id)
     }

@@ -1,9 +1,9 @@
 pub mod memory;
 pub mod rocks;
 
-use std::fmt;
 use serde::Deserialize;
 use serde::Serialize;
+use std::fmt;
 
 /**
  * Here you will set the types of request that will interact with the raft nodes.
@@ -14,6 +14,7 @@ use serde::Serialize;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Request {
     Set { key: String, value: String },
+    Del { key: String },
 }
 
 impl fmt::Display for Request {
@@ -21,6 +22,9 @@ impl fmt::Display for Request {
         match self {
             Request::Set { key, value, .. } => {
                 write!(f, "Set {{ key: {}, value: {} }}", key, value)
+            }
+            Request::Del { key } => {
+                write!(f, "Del {{ key: {} }}", key)
             }
         }
     }

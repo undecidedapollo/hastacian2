@@ -1,5 +1,5 @@
 [package]
-name = "hastacian2"
+name = "distacian"
 version = "0.1.0"
 edition = "2024"
 
@@ -24,6 +24,7 @@ futures = "0.3.31"
 byteorder  = { version = "1.4.3" }
 rand       = { version = "0.9" }
 rocksdb    = { version = "0.22.0" }
+thiserror = "2.0.17"
 
 
 [dev-dependencies]

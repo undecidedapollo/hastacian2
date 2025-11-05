@@ -65,10 +65,11 @@ where
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-enum RequestType {
+pub enum RequestType {
     AppendEntriesRequest(Vec<u8>),
     InstallSnapshotRequest(Vec<u8>),
     VoteRequest(Vec<u8>),
+    AppRequest(crate::store::Request),
 }
 
 #[allow(clippy::blocks_in_conditions)]
@@ -202,6 +203,15 @@ pub fn watch_peer_request(peer_con: Arc<PeerConnection<TcpStream, TcpStreamStart
                                 openraft::raft::VoteResponse<TypeConfig>,
                                 openraft::error::RaftError<TypeConfig>,
                             > = raft.vote(req).await;
+                            let res_bytes = bincode::serialize(&res).unwrap();
+                            peer_clone
+                                .clone()
+                                .send_response(req_id, res_bytes)
+                                .await
+                                .unwrap();
+                        }
+                        RequestType::AppRequest(app_req) => {
+                            let res = raft.client_write(app_req).await.unwrap();
                             let res_bytes = bincode::serialize(&res).unwrap();
                             peer_clone
                                 .clone()
