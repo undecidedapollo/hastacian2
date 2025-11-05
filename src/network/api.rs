@@ -31,9 +31,8 @@ pub async fn write(app: Data<App>, req: Json<Request>) -> actix_web::Result<impl
 
 #[post("/read")]
 pub async fn read(app: Data<App>, req: Json<String>) -> actix_web::Result<impl Responder> {
-    let state_machine = app.state_machine_store.state_machine.read().await;
     let key = req.0;
-    let value = state_machine.data.get(&key).cloned();
+    let value = app.state_machine_store.get(&key).await.unwrap_or(None);
 
     let res: Result<String, Infallible> = Ok(value.unwrap_or_default());
     Ok(Json(res))
@@ -55,9 +54,8 @@ pub async fn linearizable_read(
         Ok(linearizer) => {
             linearizer.await_ready(&app.raft).await.unwrap();
 
-            let state_machine = app.state_machine_store.state_machine.read().await;
             let key = req.0;
-            let value = state_machine.data.get(&key).cloned();
+            let value = app.state_machine_store.get(&key).await.unwrap_or(None);
 
             let res: Result<String, CheckIsLeaderError<TypeConfig>> = Ok(value.unwrap_or_default());
             Ok(Json(res))
@@ -147,9 +145,8 @@ pub async fn follower_read(app: Data<App>, req: Json<String>) -> actix_web::Resu
     }
 
     // 5. Read from local state machine
-    let state_machine = app.state_machine_store.state_machine.read().await;
     let key = req.0;
-    let value = state_machine.data.get(&key).cloned();
+    let value = app.state_machine_store.get(&key).await.unwrap_or(None);
 
     Ok(Json(Ok(value.unwrap_or_default())))
 }

@@ -2,3 +2,4 @@ target
 .vscode-target
 logs
 *.log
+rocks/

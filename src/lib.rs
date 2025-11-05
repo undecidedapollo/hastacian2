@@ -38,8 +38,8 @@ openraft::declare_raft_types!(
         R = Response,
 );
 
-pub type LogStore = store::LogStore;
-pub type StateMachineStore = store::StateMachineStore;
+pub type LogStore = store::rocks::log_store::RocksLogStore<TypeConfig>;
+pub type StateMachineStore = store::rocks::RocksStateMachine;
 pub type Raft = openraft::Raft<TypeConfig>;
 
 pub async fn start_example_raft_node(
@@ -53,20 +53,23 @@ pub async fn start_example_raft_node(
         election_timeout_min: 1500,
         election_timeout_max: 3000,
         // TODO: Memstore + persistent client ID requires this because a node w/ no data has no way to get that data back / we should allow re-initialization with that id.
-        allow_log_reversion: Some(true),
+        // allow_log_reversion: Some(true),
         ..Default::default()
     };
 
     let config = Arc::new(config.validate().unwrap());
 
     // Create a instance of where the Raft logs will be stored.
-    let log_store = LogStore::default();
-    // Create a instance of where the Raft data will be stored.
-    let state_machine_store = Arc::new(StateMachineStore::default());
+    // let log_store = LogStore::default();
+    // // Create a instance of where the Raft data will be stored.
+    // let state_machine_store = Arc::new(StateMachineStore::default());
+
+    let dir = format!("./rocks/node-{}", node_id);
+    let (log_store, state_machine_store) = crate::store::rocks::new(&dir).await.unwrap();
 
     // Create the network layer that will connect and communicate the raft instances and
     // will be used in conjunction with the store created above.
-    let network = network_http::NetworkFactory {};
+    let _network = network_http::NetworkFactory {};
     let peer_manager = PeerManager::new(tcp_port, TcpStreamStarter {});
     let mut rc = peer_manager.clone().get_recv();
     let network = RaftPeerManager::new(peer_manager.clone());

@@ -1,8 +1,8 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use openraft::{
     BasicNode, RaftNetwork, RaftNetworkFactory, RaftTypeConfig,
-    error::{InstallSnapshotError, NetworkError, RPCError, RaftError, Unreachable},
+    error::{InstallSnapshotError, RPCError, RaftError, Unreachable},
     network::RPCOption,
     raft::{
         AppendEntriesRequest, AppendEntriesResponse, InstallSnapshotRequest,
