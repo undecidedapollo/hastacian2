@@ -1,4 +1,4 @@
-# Distacian Development Plan
+# Distacean Development Plan
 
 ## Vision
 
@@ -8,7 +8,7 @@ Building fundamental distributed primitives that are as easy to use as `HashMap<
 
 **Target UX:**
 ```rust
-use distacian::DHashMap;
+use distacean::DHashMap;
 
 #[tokio::main]
 async fn main() {
@@ -141,7 +141,7 @@ let result = actor.call(|c| c.increment()).await?;
 Your App (3 instances)
 ├── User Code
 │   └── Uses DHashMap, DLock, etc.
-├── Distacian Library
+├── Distacean Library
 │   ├── Cluster (handles membership)
 │   ├── Primitives (DHashMap, DLock, etc.)
 │   └── Raft (single group, all operations)
@@ -210,7 +210,7 @@ let cluster = Cluster::discover("my-app.local").await?;
 
 ### Target Project Structure
 ```
-distacian/
+distacean/
 ├── src/
 │   ├── cluster/         # Membership, discovery
 │   ├── primitives/      # DHashMap, DLock, etc.
@@ -233,7 +233,7 @@ distacian/
 ### Example: URL Shortener
 ```rust
 // examples/url_shortener.rs
-use distacian::Cluster;
+use distacean::Cluster;
 
 #[tokio::main]
 async fn main() -> Result<()> {

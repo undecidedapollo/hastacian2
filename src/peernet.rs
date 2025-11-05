@@ -11,7 +11,7 @@ use tokio::sync::Mutex;
 use tokio::time::{Duration, sleep};
 
 #[derive(Parser, Debug)]
-#[command(name = "distacian")]
+#[command(name = "distacean")]
 #[command(about = "Bidirectional TCP server with ping/pong")]
 struct Args {
     #[arg(short, long)]

@@ -1,5 +1,5 @@
 use clap::Parser;
-use distacian::{Distacian, DistacianConfig};
+use distacean::{Distacean, DistaceanConfig};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser, Clone, Debug)]
@@ -31,7 +31,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tracing::info!("Starting node {} on {}", options.id, options.tcp_port);
 
-    let distacian = Distacian::init(DistacianConfig {
+    let distacean = Distacean::init(DistaceanConfig {
         node_id: options.id,
         tcp_port: options.tcp_port,
         nodes: vec![
@@ -44,22 +44,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Sleep for 3 seconds
     tokio::time::sleep(std::time::Duration::from_secs(8)).await;
-    let kv = distacian.distkv();
+    let kv = distacean.distkv();
     let key = "foo".to_string();
     let value = options.value.to_string();
 
     if options.id == 3 {
         kv.set(key.clone(), value.clone()).await?;
+
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
         let read_value = kv.eventual_read(key.clone()).await?;
+
         println!("Node 3 read value: {}", read_value);
     } else if options.id == 2 {
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+
         let read_value = kv.eventual_read(key.clone()).await?;
+
         println!("Node 2 read value: {}", read_value);
     } else if options.id == 1 {
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+
         let read_value = kv.eventual_read(key.clone()).await?;
+
         println!("Node 1 read value: {}", read_value);
     }
 

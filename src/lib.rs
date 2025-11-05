@@ -2,6 +2,7 @@ pub mod log_store;
 pub mod network;
 pub mod network_tcp;
 pub mod peernet;
+mod protocol;
 pub mod store;
 mod util;
 
@@ -15,12 +16,12 @@ use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 
 use crate::network_tcp::RaftPeerManager;
-use crate::network_tcp::RequestType;
 use crate::network_tcp::watch_peer_request;
 use crate::peernet::PeerConnection;
 use crate::peernet::PeerManager;
 use crate::peernet::StartableStream;
 use crate::peernet::TcpStreamStarter;
+use crate::protocol::RequestType;
 use crate::store::Request;
 use crate::store::Response;
 use crate::store::rocks::RocksStateMachine;
@@ -38,32 +39,32 @@ pub type LogStore = store::rocks::log_store::RocksLogStore<TypeConfig>;
 pub type StateMachineStore = store::rocks::RocksStateMachine;
 pub type Raft = openraft::Raft<TypeConfig>;
 
-pub struct DistacianCore {
+pub struct DistaceanCore {
     node_id: NodeId,
     raft: Raft,
     peer_manager: Arc<PeerManager<TcpStream, TcpStreamStarter>>,
     state_machine_store: RocksStateMachine,
 }
 
-pub struct DistacianConfig {
+pub struct DistaceanConfig {
     pub node_id: NodeId,
     pub tcp_port: u16,
     pub nodes: Vec<(NodeId, String)>,
 }
 
 #[derive(Error, Debug)]
-pub enum DistacianSetupError {
+pub enum DistaceanSetupError {
     #[error("unknown setup error")]
     Unknown,
 }
 
 #[derive(Clone)]
-pub struct Distacian {
-    core: Arc<DistacianCore>,
+pub struct Distacean {
+    core: Arc<DistaceanCore>,
 }
 
-impl Distacian {
-    pub async fn init(opts: DistacianConfig) -> Result<Self, Box<dyn std::error::Error>> {
+impl Distacean {
+    pub async fn init(opts: DistaceanConfig) -> Result<Self, Box<dyn std::error::Error>> {
         let config = Config {
             heartbeat_interval: 500,
             election_timeout_min: 1500,
@@ -132,7 +133,7 @@ impl Distacian {
         }
 
         Ok(Self {
-            core: Arc::new(DistacianCore {
+            core: Arc::new(DistaceanCore {
                 node_id: opts.node_id,
                 raft,
                 peer_manager,
@@ -144,14 +145,14 @@ impl Distacian {
     pub fn distkv(self: &Self) -> DistKV {
         DistKV {
             core: Arc::new(DistKVCore {
-                distacian: self.core.clone(),
+                distacean: self.core.clone(),
             }),
         }
     }
 }
 
-impl DistacianCore {
-    fn raft(&self) -> Raft {
+impl DistaceanCore {
+    pub(crate) fn raft(&self) -> Raft {
         self.raft.clone()
     }
 
@@ -208,7 +209,7 @@ impl DistacianCore {
 }
 
 struct DistKVCore {
-    distacian: Arc<DistacianCore>,
+    distacean: Arc<DistaceanCore>,
 }
 
 #[derive(Clone)]
@@ -218,7 +219,7 @@ pub struct DistKV {
 
 impl DistKVCore {
     pub fn set(self: Arc<DistKVCore>, key: String, value: String) {
-        let raft = self.distacian.raft();
+        let raft = self.distacean.raft();
         tokio::spawn(async move {
             let req = Request::Set { key, value };
             let _res = raft.client_write(req).await;
@@ -233,7 +234,7 @@ impl DistKV {
         value: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         self.core
-            .distacian
+            .distacean
             .write_or_forward_to_leader(Request::Set {
                 key: key.clone(),
                 value: value.clone(),
@@ -244,7 +245,7 @@ impl DistKV {
 
     pub async fn delete(self: &DistKV, key: String) -> Result<(), Box<dyn std::error::Error>> {
         self.core
-            .distacian
+            .distacean
             .write_or_forward_to_leader(Request::Del { key: key.clone() })
             .await?;
         Ok(())
@@ -254,7 +255,7 @@ impl DistKV {
         self: &DistKV,
         key: String,
     ) -> Result<String, Box<dyn std::error::Error>> {
-        let value = self.core.distacian.state_machine_store.get(&key).await?;
+        let value = self.core.distacean.state_machine_store.get(&key).await?;
         Ok(value.unwrap_or_default())
     }
 }

@@ -41,42 +41,42 @@ rpc() {
 }
 
 kill_servers() {
-    echo "Killing all running distacian servers..."
+    echo "Killing all running distacean servers..."
     if [ "$(uname)" = "Darwin" ]; then
-        SERVICE='distacian'
+        SERVICE='distacean'
         if pgrep -xq -- "${SERVICE}"; then
             pkill -f "${SERVICE}"
         fi
     else
         set +e # killall will error if finds no process to kill
-        killall distacian
+        killall distacean
         set -e
     fi
     echo "Servers stopped"
 }
 
 run_servers() {
-    echo "Building distacian..."
+    echo "Building distacean..."
     cargo build
 
-    echo "Killing any existing distacian servers..."
+    echo "Killing any existing distacean servers..."
     kill_servers
 
     sleep 1
 
-    echo "Starting 3 distacian servers..."
+    echo "Starting 3 distacean servers..."
     echo ""
 
     # Start servers in background, writing to both log files and stdout
-    ./target/debug/distacian --id 1 --http-addr 127.0.0.1:21001 2>&1 | tee n1.log &
+    ./target/debug/distacean --id 1 --http-addr 127.0.0.1:21001 2>&1 | tee n1.log &
     sleep 1
     echo "Server 1 started on port 21001"
 
-    ./target/debug/distacian --id 2 --http-addr 127.0.0.1:21002 2>&1 | tee n2.log &
+    ./target/debug/distacean --id 2 --http-addr 127.0.0.1:21002 2>&1 | tee n2.log &
     sleep 1
     echo "Server 2 started on port 21002"
 
-    ./target/debug/distacian --id 3 --http-addr 127.0.0.1:21003 2>&1 | tee n3.log &
+    ./target/debug/distacean --id 3 --http-addr 127.0.0.1:21003 2>&1 | tee n3.log &
     sleep 1
     echo "Server 3 started on port 21003"
 
