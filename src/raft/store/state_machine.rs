@@ -1,3 +1,6 @@
+use futures::Stream;
+use futures::TryStreamExt;
+use openraft::OptionalSend;
 use std::fs;
 use std::io;
 use std::io::Cursor;
@@ -227,14 +230,10 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
         self.get_meta().map_err(|e| io::Error::other(e.to_string()))
     }
 
-    async fn apply<I>(&mut self, entries: I) -> Result<(), io::Error>
+    async fn apply<Strm>(&mut self, mut entries: Strm) -> Result<(), io::Error>
     where
-        I: IntoIterator<Item = EntryResponder<TypeConfig>> + Send,
-        I::IntoIter: Send,
+        Strm: Stream<Item = Result<EntryResponder<TypeConfig>, io::Error>> + Unpin + OptionalSend,
     {
-        let cf_data = self.cf_sm_data();
-        let cf_meta = self.cf_sm_meta();
-
         let mut batch = rocksdb::WriteBatch::default();
         let mut last_applied_log = None;
         let mut last_membership = None;
@@ -245,7 +244,10 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
         let mut pending_state: std::collections::HashMap<Vec<u8>, Option<(Vec<u8>, u64)>> =
             std::collections::HashMap::new();
 
-        for (entry, responder) in entries {
+        while let Some((entry, responder)) = entries.try_next().await? {
+            let cf_data = self.cf_sm_data();
+            let cf_meta = self.cf_sm_meta();
+
             tracing::debug!(%entry.log_id, "replicate to sm");
 
             last_applied_log = Some(entry.log_id());
@@ -253,7 +255,11 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
             let response = match entry.payload {
                 EntryPayload::Blank => Response::Empty,
                 EntryPayload::Normal(req) => match &req.op {
-                    RequestOperation::KV(KVOperation::Set { key, value, return_previous }) => {
+                    RequestOperation::KV(KVOperation::Set {
+                        key,
+                        value,
+                        return_previous,
+                    }) => {
                         let key_bytes = key.as_bytes().to_vec();
 
                         // Get current value and revision (only if return_previous is true)
@@ -280,21 +286,22 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
                             }
                         } else {
                             // Only get revision, skip fetching the value
-                            let current_revision = if let Some(pending) = pending_state.get(&key_bytes) {
-                                match pending {
-                                    Some((_, rev)) => *rev,
-                                    None => 0,
-                                }
-                            } else {
-                                match self
-                                    .db
-                                    .get_cf(cf_data, &key_bytes)
-                                    .map_err(|e| io::Error::other(e.to_string()))?
-                                {
-                                    Some(bytes) => deserialize::<StoredValue>(&bytes)?.revision,
-                                    None => 0,
-                                }
-                            };
+                            let current_revision =
+                                if let Some(pending) = pending_state.get(&key_bytes) {
+                                    match pending {
+                                        Some((_, rev)) => *rev,
+                                        None => 0,
+                                    }
+                                } else {
+                                    match self
+                                        .db
+                                        .get_cf(cf_data, &key_bytes)
+                                        .map_err(|e| io::Error::other(e.to_string()))?
+                                    {
+                                        Some(bytes) => deserialize::<StoredValue>(&bytes)?.revision,
+                                        None => 0,
+                                    }
+                                };
                             (None, current_revision)
                         };
 
@@ -378,21 +385,22 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
                             }
                         } else {
                             // Only get revision, skip fetching the value
-                            let current_revision = if let Some(pending) = pending_state.get(&key_bytes) {
-                                match pending {
-                                    Some((_, rev)) => *rev,
-                                    None => 0,
-                                }
-                            } else {
-                                match self
-                                    .db
-                                    .get_cf(cf_data, &key_bytes)
-                                    .map_err(|e| io::Error::other(e.to_string()))?
-                                {
-                                    Some(bytes) => deserialize::<StoredValue>(&bytes)?.revision,
-                                    None => 0,
-                                }
-                            };
+                            let current_revision =
+                                if let Some(pending) = pending_state.get(&key_bytes) {
+                                    match pending {
+                                        Some((_, rev)) => *rev,
+                                        None => 0,
+                                    }
+                                } else {
+                                    match self
+                                        .db
+                                        .get_cf(cf_data, &key_bytes)
+                                        .map_err(|e| io::Error::other(e.to_string()))?
+                                    {
+                                        Some(bytes) => deserialize::<StoredValue>(&bytes)?.revision,
+                                        None => 0,
+                                    }
+                                };
                             (None, current_revision)
                         };
 
@@ -449,6 +457,8 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
                 responses.push((responder, response));
             }
         }
+
+        let cf_meta = self.cf_sm_meta();
 
         // Add metadata writes to the batch for atomic commit
         if let Some(ref log_id) = last_applied_log {

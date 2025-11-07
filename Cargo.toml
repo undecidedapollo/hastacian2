@@ -10,7 +10,7 @@ homepage = "https://distacean.com"
 keywords = []
 categories = []
 [dependencies]
-openraft        = { git = "https://github.com/databendlabs/openraft", branch = "release-0.10", features = ["serde", "type-alias"] }
+openraft        = { git = "https://github.com/databendlabs/openraft", rev = "116e9f1c5f740e95c48ccb6d58aaef8706302bd0", features = ["serde", "type-alias"] }
 
 serde              = { version = "1.0.114", features = ["derive"] }
 tokio              = { version = "1.0", default-features = false, features = ["sync", "net", "io-util", "rt", "macros"] }
@@ -22,6 +22,7 @@ thiserror = "2.0.17"
 rmp-serde = "1.3.0"
 maplit = "1.0.2"
 bon = "3.8.1"
+futures = "0.3.31"
 
 
 [dev-dependencies]
@@ -32,7 +33,7 @@ clap               = { version = "4.1.11", features = ["derive", "env"] }
 reqwest            = { version = "0.12.5", features = ["json"] }
 serde_json         = { version = "1.0.57" }
 tracing-subscriber = { version = "0.3.0", features = ["env-filter"] }
-futures = "0.3.31"
+
 md5 = "0.7"
 
 [features]
