@@ -25,9 +25,13 @@ use serde::Deserialize;
 use serde::Serialize;
 use tokio::task::spawn_blocking;
 
+use crate::raft::FIFOOperation;
 use crate::raft::KVOperation;
 use crate::raft::RequestOperation;
-use crate::raft::store::kv::{operation_set, operation_cas, operation_del, StoredValue, serialize, deserialize};
+use crate::raft::store::common::deserialize;
+use crate::raft::store::common::serialize;
+use crate::raft::store::fifo::{common::FIFOOverlay, operation_dequeue, operation_enqueue};
+use crate::raft::store::kv::{StoredValue, operation_cas, operation_del, operation_set};
 use crate::raft::{Response, TypeConfig};
 fn cf_sm_meta<'a>(db: &'a DB) -> &'a rocksdb::ColumnFamily {
     db.cf_handle("sm_meta").unwrap()
@@ -127,7 +131,6 @@ impl RocksStateMachine {
     }
 }
 
-
 /// Snapshot file format: metadata + data stored together
 #[derive(Serialize, Deserialize)]
 struct SnapshotFile {
@@ -218,7 +221,7 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
     where
         Strm: Stream<Item = Result<EntryResponder<TypeConfig>, io::Error>> + Unpin + OptionalSend,
     {
-        let mut batch = rocksdb::WriteBatch::default();
+        let mut batch = rocksdb::WriteBatchWithTransaction::<false>::default();
         let mut last_applied_log = None;
         let mut last_membership = None;
         let mut responses = Vec::new();
@@ -227,6 +230,11 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
         // None = deleted, Some((value, revision)) = written
         let mut pending_state: std::collections::HashMap<Vec<u8>, Option<(Vec<u8>, u64)>> =
             std::collections::HashMap::new();
+
+        // Track FIFO queue state within this batch
+        let mut fifo_overlay = FIFOOverlay {
+            meta: std::collections::HashMap::new(),
+        };
 
         while let Some((entry, responder)) = entries.try_next().await? {
             let _cf_data = self.cf_sm_data();
@@ -263,6 +271,26 @@ impl RaftStateMachine<TypeConfig> for RocksStateMachine {
                         &mut pending_state,
                         &mut batch,
                     )?,
+                    RequestOperation::FIFO(FIFOOperation::Enqueue(enqueue_op)) => {
+                        operation_enqueue::operation_enqueue(
+                            enqueue_op.clone(),
+                            self.db.clone(),
+                            req.client_id,
+                            req.seq_id,
+                            &mut fifo_overlay,
+                            &mut batch,
+                        )?
+                    }
+                    RequestOperation::FIFO(FIFOOperation::Dequeue(dequeue_op)) => {
+                        operation_dequeue::operation_dequeue(
+                            dequeue_op.clone(),
+                            self.db.clone(),
+                            req.client_id,
+                            req.seq_id,
+                            &mut fifo_overlay,
+                            &mut batch,
+                        )?
+                    }
                 },
                 EntryPayload::Membership(ref mem) => {
                     last_membership = Some(StoredMembership::new(Some(entry.log_id), mem.clone()));

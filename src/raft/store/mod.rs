@@ -1,4 +1,7 @@
+pub mod common;
+pub mod fifo;
 pub mod kv;
+
 mod log_store;
 mod state_machine;
 
@@ -28,11 +31,17 @@ where
     let sm_meta = ColumnFamilyDescriptor::new("sm_meta", Options::default());
     let sm_data = ColumnFamilyDescriptor::new("sm_data", Options::default());
     let logs = ColumnFamilyDescriptor::new("logs", Options::default());
+    let fifo_queue_meta = ColumnFamilyDescriptor::new("fifo_queue_meta", Options::default());
+    let fifo_queue_data = ColumnFamilyDescriptor::new("fifo_queue_data", Options::default());
 
     let db_path = db_path.as_ref();
     let snapshot_dir = db_path.join("snapshots");
 
-    let db = DB::open_cf_descriptors(&db_opts, db_path, vec![meta, sm_meta, sm_data, logs])
+    let db = DB::open_cf_descriptors(
+        &db_opts,
+        db_path,
+        vec![meta, sm_meta, sm_data, logs, fifo_queue_meta, fifo_queue_data],
+    )
         .map_err(io::Error::other)?;
 
     let db = Arc::new(db);

@@ -219,6 +219,12 @@ impl Distacean {
             }),
         }
     }
+
+    pub fn fifo_queues(self: &Self) -> crate::fifo::DistFIFO {
+        crate::fifo::DistFIFO {
+            distacean: self.core.clone(),
+        }
+    }
 }
 
 pub enum LeaderResponse {

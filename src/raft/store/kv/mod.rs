@@ -1,12 +1,12 @@
 mod common;
-mod operation_set;
 mod operation_cas;
 mod operation_del;
+mod operation_set;
 
-pub use common::{StoredValue, serialize, deserialize, get_cf_handle, rocksdb_err_to_io};
-pub use operation_set::operation_set;
+pub use common::StoredValue;
 pub use operation_cas::operation_cas;
 pub use operation_del::operation_del;
+pub use operation_set::operation_set;
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
@@ -29,9 +29,7 @@ pub struct KVCas {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum KVOperation {
     Set(KVSet),
-    Del {
-        key: String,
-    },
+    Del { key: String },
     Cas(KVCas),
 }
 

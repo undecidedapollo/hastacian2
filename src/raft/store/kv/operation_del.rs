@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use rocksdb::DB;
 
-use crate::{
-    raft::{KVResponse, Response, ResponseResult, store::kv::common::{get_cf_handle, rocksdb_err_to_io}},
+use crate::raft::{
+    KVResponse, Response, ResponseResult,
+    store::common::{deserialize, get_cf_handle, rocksdb_err_to_io, serialize},
 };
 
 pub fn operation_del(
@@ -23,8 +24,7 @@ pub fn operation_del(
         pending.is_some()
     } else {
         // Not in pending state, read from DB
-        db
-            .get_cf(sm_data, &key_bytes)
+        db.get_cf(sm_data, &key_bytes)
             .map_err(rocksdb_err_to_io)?
             .is_some()
     };

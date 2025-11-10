@@ -3,7 +3,10 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 
 pub mod store;
+pub use store::fifo::FIFOOperation;
 pub use store::kv::KVOperation;
+
+use crate::raft::store::fifo::FIFOResponse;
 
 pub type NodeId = u64;
 
@@ -23,21 +26,16 @@ pub struct Request {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum RequestOperation {
     KV(KVOperation),
-    // FIFO(FIFOOperation),
+    FIFO(FIFOOperation),
 }
 
 impl fmt::Display for RequestOperation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             RequestOperation::KV(kv_op) => write!(f, "{}", kv_op),
+            RequestOperation::FIFO(fifo_op) => write!(f, "{}", fifo_op),
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum FIFOOperation {
-    Enqueue { values: Vec<u8> },
-    Dequeue { count: usize },
 }
 
 impl fmt::Display for Request {
@@ -90,6 +88,7 @@ pub enum Response {
 pub enum ResponseResult {
     Empty,
     KV(KVResponse),
+    FIFO(FIFOResponse),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -4,7 +4,11 @@ use rocksdb::DB;
 
 use crate::{
     SetResponse,
-    raft::{KVResponse, Response, ResponseResult, store::kv::{KVCas, common::{StoredValue, serialize, deserialize, get_cf_handle, rocksdb_err_to_io}}},
+    raft::{
+        KVResponse, Response, ResponseResult,
+        store::common::{deserialize, get_cf_handle, rocksdb_err_to_io, serialize},
+        store::kv::{KVCas, common::StoredValue},
+    },
 };
 
 pub fn operation_cas(
@@ -28,10 +32,7 @@ pub fn operation_cas(
             }
         } else {
             // Not in pending state, read from DB
-            match db
-                .get_cf(sm_data, &key_bytes)
-                .map_err(rocksdb_err_to_io)?
-            {
+            match db.get_cf(sm_data, &key_bytes).map_err(rocksdb_err_to_io)? {
                 Some(bytes) => {
                     let stored = deserialize::<StoredValue>(&bytes)?;
                     (Some(stored.data), stored.revision)
@@ -47,10 +48,7 @@ pub fn operation_cas(
                 None => 0,
             }
         } else {
-            match db
-                .get_cf(sm_data, &key_bytes)
-                .map_err(rocksdb_err_to_io)?
-            {
+            match db.get_cf(sm_data, &key_bytes).map_err(rocksdb_err_to_io)? {
                 Some(bytes) => deserialize::<StoredValue>(&bytes)?.revision,
                 None => 0,
             }

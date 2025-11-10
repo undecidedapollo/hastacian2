@@ -11,7 +11,6 @@ use crate::distkv::operator_set::SetRequestBuilder;
 use crate::raft::KVOperation;
 use crate::raft::RequestOperation;
 use serde::Serialize;
-use serde::de::DeserializeOwned;
 
 pub use self::operator_set::SetError;
 

@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use openraft::{
-    ReadPolicy,
     error::{InstallSnapshotError, decompose::DecomposeResult},
     raft::{AppendEntriesRequest, InstallSnapshotRequest, VoteRequest},
 };

@@ -1,5 +1,6 @@
 mod core;
 mod distkv;
+mod fifo;
 mod network_tcp;
 mod peernet;
 mod protocol;
