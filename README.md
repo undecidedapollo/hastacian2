@@ -15,12 +15,20 @@ In another terminal, run the test:
 ./examples/run_shorturl.sh test
 ```
 
+## Example: FIFO Queue
+This example demonstrates a distributed FIFO queue with one producer and two consumers.
+
+Build & run the fifo example:
+```bash
+./examples/run_fifo.sh run
+```
+
 ## Single Node Examples
 
 ### FIFO Queue
-This example demonstrates a simple FIFO queue using Distacean's distributed key value store.
+This example demonstrates a distributed FIFO queue with one producer and one consumer in the same node.
 ```bash
-cargo run --example fifo
+cargo run --example fifo -- ephemeral
 ```
 
 ### Atomic Compare and Swap

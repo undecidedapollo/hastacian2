@@ -94,6 +94,15 @@ impl Distacean {
             PeerManager::new(opts.tcp_port, TcpStreamStarter {});
         let mut on_new_peer_receiver = peer_manager.clone().get_recv();
 
+        // Hack to spin things up early ideally
+        for (_id, addr) in opts.nodes.iter() {
+            let port = addr.split(':').last().and_then(|s| s.parse().ok()).unwrap();
+            if port == opts.tcp_port {
+                continue;
+            }
+            peer_manager.get_or_create_connection(port).await;
+        }
+
         let network = RaftPeerManager::new(peer_manager.clone());
 
         // Spin up listener for incoming connections. It routes new connections to the peer manager to handle.
@@ -223,6 +232,15 @@ impl Distacean {
     pub fn fifo_queues(self: &Self) -> crate::fifo::DistFIFO {
         crate::fifo::DistFIFO {
             distacean: self.core.clone(),
+        }
+    }
+
+    pub async fn wait_until_ready(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        loop {
+            if self.core.raft.current_leader().await.is_some() {
+                return Ok(());
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
         }
     }
 }

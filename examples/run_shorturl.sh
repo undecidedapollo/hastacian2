@@ -44,16 +44,16 @@ run_servers() {
     echo "Starting 3 shorturl servers..."
     echo ""
 
-    # Start servers in background, writing to both log files and stdout
-    ./target/debug/examples/shorturl cluster --tcp-port 22001 --node-id 1 --http-port 8001 2>&1 | tee shorturl1.log &
+    # Start servers in background, writing to both log files and stdout with prefix
+    ./target/debug/examples/shorturl cluster --tcp-port 22001 --node-id 1 --http-port 8001 2>&1 | sed -u 's/^/[Server 1] /' | tee shorturl1.log &
     sleep 1
     echo "Server 1 started on HTTP port 8001 (TCP 22001)"
 
-    ./target/debug/examples/shorturl cluster --tcp-port 22002 --node-id 2 --http-port 8002 2>&1 | tee shorturl2.log &
+    ./target/debug/examples/shorturl cluster --tcp-port 22002 --node-id 2 --http-port 8002 2>&1 | sed -u 's/^/[Server 2] /' | tee shorturl2.log &
     sleep 1
     echo "Server 2 started on HTTP port 8002 (TCP 22002)"
 
-    ./target/debug/examples/shorturl cluster --tcp-port 22003 --node-id 3 --http-port 8003 2>&1 | tee shorturl3.log &
+    ./target/debug/examples/shorturl cluster --tcp-port 22003 --node-id 3 --http-port 8003 2>&1 | sed -u 's/^/[Server 3] /' | tee shorturl3.log &
     sleep 1
     echo "Server 3 started on HTTP port 8003 (TCP 22003)"
 

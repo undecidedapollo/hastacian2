@@ -378,7 +378,7 @@ where
                                 let _ = read_channel.send(RecvMessage::Data { payload });
                             }
                             Ok(Message::Req { req_id, payload }) => {
-                                println!(
+                                tracing::debug!(
                                     "[{}] [< {}] Received request {}: {} bytes",
                                     local_port,
                                     peer_port,
@@ -388,7 +388,7 @@ where
                                 let _ = read_channel.send(RecvMessage::Req { req_id, payload });
                             }
                             Ok(Message::Res { res_id, payload }) => {
-                                println!(
+                                tracing::debug!(
                                     "[{}] [< {}] Received response {}: {} bytes",
                                     local_port,
                                     peer_port,
